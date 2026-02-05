@@ -1,0 +1,50 @@
+# Binaries
+bin/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test coverage
+*.out
+coverage.out
+
+# Go workspace file
+go.work
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# Logs
+*.log
+
+# Docker
+*.tar
+
+# Temporary files
+tmp/
+temp/
+
+# Mobile API
+cd /home/developer/Documenti/Progetti/golangPrj/rmcapitale-appjulia/bff-julia-mobile-api
+go mod download
+make run
+# Oppure: make docker-run
+
+# Profile API
+cd /home/developer/Documenti/Progetti/golangPrj/rmcapitale-appjulia/bff-julia-profile-api
+go mod download
+make run
+# Oppure: make docker-run
