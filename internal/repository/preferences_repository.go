@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos"
 )
@@ -24,24 +26,74 @@ func NewUserPreferencesRepository(client *azcosmos.Client, database string) *Use
 
 // GetPreferences retrieves user preferences from Cosmos DB
 func (r *UserPreferencesRepository) GetPreferences(ctx context.Context, userID string) ([]byte, error) {
-	// TODO: Implement Cosmos DB query
-	return nil, nil
+	containerClient, err := r.client.NewContainer(r.database, r.container)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get container client: %w", err)
+	}
+
+	pk := azcosmos.NewPartitionKeyString(userID)
+	resp, err := containerClient.ReadItem(ctx, pk, userID, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read preferences: %w", err)
+	}
+
+	return resp.Value, nil
 }
 
 // CreatePreferences creates new user preferences in Cosmos DB
-func (r *UserPreferencesRepository) CreatePreferences(ctx context.Context, preferences interface{}) error {
-	// TODO: Implement Cosmos DB create
+func (r *UserPreferencesRepository) CreatePreferences(ctx context.Context, userID string, preferences interface{}) error {
+	containerClient, err := r.client.NewContainer(r.database, r.container)
+	if err != nil {
+		return fmt.Errorf("failed to get container client: %w", err)
+	}
+
+	marshalledItem, err := json.Marshal(preferences)
+	if err != nil {
+		return fmt.Errorf("failed to marshal preferences: %w", err)
+	}
+
+	pk := azcosmos.NewPartitionKeyString(userID)
+	_, err = containerClient.CreateItem(ctx, pk, marshalledItem, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create preferences: %w", err)
+	}
+
 	return nil
 }
 
 // UpdatePreferences updates existing user preferences in Cosmos DB
 func (r *UserPreferencesRepository) UpdatePreferences(ctx context.Context, userID string, preferences interface{}) error {
-	// TODO: Implement Cosmos DB update
+	containerClient, err := r.client.NewContainer(r.database, r.container)
+	if err != nil {
+		return fmt.Errorf("failed to get container client: %w", err)
+	}
+
+	marshalledItem, err := json.Marshal(preferences)
+	if err != nil {
+		return fmt.Errorf("failed to marshal preferences: %w", err)
+	}
+
+	pk := azcosmos.NewPartitionKeyString(userID)
+	_, err = containerClient.ReplaceItem(ctx, pk, userID, marshalledItem, nil)
+	if err != nil {
+		return fmt.Errorf("failed to replace preferences: %w", err)
+	}
+
 	return nil
 }
 
 // DeletePreferences deletes user preferences from Cosmos DB
 func (r *UserPreferencesRepository) DeletePreferences(ctx context.Context, userID string) error {
-	// TODO: Implement Cosmos DB delete
+	containerClient, err := r.client.NewContainer(r.database, r.container)
+	if err != nil {
+		return fmt.Errorf("failed to get container client: %w", err)
+	}
+
+	pk := azcosmos.NewPartitionKeyString(userID)
+	_, err = containerClient.DeleteItem(ctx, pk, userID, nil)
+	if err != nil {
+		return fmt.Errorf("failed to delete preferences: %w", err)
+	}
+
 	return nil
 }
