@@ -1,0 +1,13 @@
+julia_batch_jobs_notification:
+  cron: "*/1 * * * *" # Every minute
+  maxRetries: 3
+
+julia_rest_services:
+  notification:
+    baseUrl: "http://localhost:8095"
+    requestTimeout: 30s
+    connectTimeout: 5s
+  external:
+    baseUrl: "http://localhost:8096"
+    requestTimeout: 30s
+    connectTimeout: 5s

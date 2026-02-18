@@ -1,0 +1,30 @@
+# Binaries
+bin/
+obj/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test coverage
+*.out
+*.test
+coverage.txt
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Environment
+.env
+.env.*
+
+# Project specific
+vendor/
+node_modules/
+dist/
+build/

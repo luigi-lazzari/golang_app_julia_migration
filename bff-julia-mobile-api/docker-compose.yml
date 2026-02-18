@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  # Azure App Configuration Emulator
+  app-config-emulator:
+    image: mcr.microsoft.com/azure-app-configuration/app-configuration-emulator:1.0.2
+    container_name: app-config-emulator-mobile
+    ports:
+      - "8484:8483"
+    environment:
+      - Tenant:AnonymousAuthEnabled=true
+      - Authentication:Anonymous:AnonymousUserRole=Owner
+      - Tenant:HmacSha256Enabled=true
+      - Tenant:AccessKeys:0:Id=local
+      - Tenant:AccessKeys:0:Name=local
+      - Tenant:AccessKeys:0:Secret=c2VjcmV0
+    networks:
+      - julia-mobile-network
+
+  # Azure Cosmos DB Emulator
+  cosmos-db-emulator:
+    image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:latest
+    container_name: cosmos-db-emulator-mobile
+    ports:
+      - "8182:8081"
+      - "10251:10251"
+      - "10252:10252"
+      - "10253:10253"
+      - "10254:10254"
+    environment:
+      - AZURE_COSMOS_EMULATOR_PARTITION_COUNT=10
+      - AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE=true
+      - AZURE_COSMOS_EMULATOR_IP_ADDRESS_OVERRIDE=127.0.0.1
+    volumes:
+      - cosmos-data:/tmp/cosmos/appdata
+    networks:
+      - julia-mobile-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "-k", "https://localhost:8081/_explorer/index.html"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+  # Julia Mobile API (Go)
+  julia-mobile-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: julia-mobile-api
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVER_PORT=8080
+      - AZURE_APPCONFIG_ENDPOINT=http://app-config-emulator:8483
+      - AZURE_APPCONFIG_CONNECTION_STRING=Endpoint=http://app-config-emulator:8483;Id=local;Secret=c2VjcmV0
+      - COSMOS_DB_ENDPOINT=https://cosmos-db-emulator:8081
+      - COSMOS_DB_KEY=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==
+      - COSMOS_DB_DATABASE=bff_julia_db
+      - COSMOS_EMULATOR_ENABLED=true
+      - LOG_LEVEL=info
+      - ENVIRONMENT=development
+    depends_on:
+      - app-config-emulator
+      - cosmos-db-emulator
+    networks:
+      - julia-mobile-network
+
+networks:
+  julia-mobile-network:
+    driver: bridge
+
+volumes:
+  cosmos-data:
+    driver: local

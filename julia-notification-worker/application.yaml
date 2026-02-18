@@ -1,0 +1,11 @@
+azure_servicebus:
+  connectionString: "Endpoint=sb://127.0.0.1;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY;UseDevelopmentEmulator=true"
+  topicName: "notification-topic"
+  subscriptionName: "notification-subscription"
+  maxConcurrentCalls: 1
+
+azure_notificationhub:
+  connectionString: "Endpoint=sb://[namespace].servicebus.windows.net/;SharedAccessKeyName=DefaultFullSharedAccessSignature;SharedAccessKey=[key]"
+  hubName: "[hub-name]"
+  enabled: true
+  sendTimeoutSeconds: 60
