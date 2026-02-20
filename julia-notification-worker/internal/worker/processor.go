@@ -9,11 +9,12 @@ import (
 
 // ServiceBusNotificationDto represents the raw JSON from Service Bus
 type ServiceBusNotificationDto struct {
-	Title         string                 `json:"title"`
-	Body          string                 `json:"body"`
-	Message       string                 `json:"message"` // Fallback field
-	TagExpression string                 `json:"tagExpression"`
-	Data          map[string]interface{} `json:"data"`
+	Title   string                 `json:"title"`
+	Body    string                 `json:"body"`
+	Message string                 `json:"message"` // Fallback field
+	Tags    string                 `json:"tags"`    // Comma separated tags/categories
+	UserID  string                 `json:"userId"`
+	Data    map[string]interface{} `json:"data"`
 }
 
 type NotificationHubService interface {
@@ -35,8 +36,6 @@ func (p *ServiceBusNotificationProcessor) ProcessMessage(messageID string, conte
 
 	var dto ServiceBusNotificationDto
 	if err := json.Unmarshal(body, &dto); err != nil {
-		// If it's not JSON, we might want to handle it as raw string in the future,
-		// but for now, we follow the Java logic which expects JSON for complex notifications.
 		return fmt.Errorf("failed to deserialize message: %w", err)
 	}
 
@@ -45,10 +44,17 @@ func (p *ServiceBusNotificationProcessor) ProcessMessage(messageID string, conte
 
 	// Map DTO to internal model
 	notification := NotificationMessage{
-		Title:         dto.Title,
-		Body:          dto.Body,
-		TagExpression: dto.TagExpression,
-		Data:          dto.Data,
+		Title:  dto.Title,
+		Body:   dto.Body,
+		UserID: dto.UserID,
+		Data:   dto.Data,
+	}
+
+	if dto.Tags != "" {
+		notification.Categories = strings.Split(dto.Tags, ",")
+		for i := range notification.Categories {
+			notification.Categories[i] = strings.TrimSpace(notification.Categories[i])
+		}
 	}
 
 	// Validate
@@ -56,7 +62,7 @@ func (p *ServiceBusNotificationProcessor) ProcessMessage(messageID string, conte
 		return fmt.Errorf("validation failed: %w", err)
 	}
 
-	log.Printf("Sending notification to Hub: MessageId=%s, Title=%s, TagExpression=%s", messageID, notification.Title, notification.TagExpression)
+	log.Printf("Sending notification to Hub: MessageId=%s, Title=%s, UserID=%s, Categories=%v", messageID, notification.Title, notification.UserID, notification.Categories)
 
 	if err := p.notificationHubService.SendNotification(notification, messageID); err != nil {
 		// Detect duplicate message error (defined in worker/model.go now)

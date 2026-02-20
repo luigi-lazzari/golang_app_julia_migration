@@ -6,10 +6,11 @@ import (
 
 // NotificationMessage represents a notification message to be sent to Azure Notification Hub.
 type NotificationMessage struct {
-	Title         string                 `json:"title" validate:"required"`
-	Body          string                 `json:"body" validate:"required"`
-	TagExpression string                 `json:"tagExpression,omitempty"`
-	Data          map[string]interface{} `json:"data,omitempty"`
+	Title      string                 `json:"title" validate:"required"`
+	Body       string                 `json:"body" validate:"required"`
+	UserID     string                 `json:"userId,omitempty"`
+	Categories []string               `json:"categories,omitempty"`
+	Data       map[string]interface{} `json:"data,omitempty"`
 }
 
 type DuplicateMessageError struct {

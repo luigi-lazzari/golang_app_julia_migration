@@ -45,6 +45,9 @@ func (s *NotificationHubService) SendNotification(msg worker.NotificationMessage
 		return &worker.DuplicateMessageError{MessageID: messageId}
 	}
 
+	// Step 2: Build Tag Expression
+	tagExpression := s.buildTagExpression(msg)
+
 	endpoint, _, _, err := s.parseConnectionString()
 	if err != nil {
 		return err
@@ -88,9 +91,12 @@ func (s *NotificationHubService) SendNotification(msg worker.NotificationMessage
 	req.Header.Set("ServiceBusNotification-Format", "template")
 
 	// Add TagExpression header if present
-	if msg.TagExpression != "" {
-		req.Header.Set("ServiceBusNotification-Tags", msg.TagExpression)
+	if tagExpression != "" {
+		req.Header.Set("ServiceBusNotification-Tags", tagExpression)
 	}
+
+	log.Printf("Sending template notification to Azure Notification Hub: MessageId=%s, title='%s', tagExpression='%s'",
+		messageId, msg.Title, tagExpression)
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
@@ -106,6 +112,26 @@ func (s *NotificationHubService) SendNotification(msg worker.NotificationMessage
 	s.deduplicationService.MarkAsProcessed(messageId)
 
 	return nil
+}
+
+func (s *NotificationHubService) buildTagExpression(msg worker.NotificationMessage) string {
+	if msg.UserID != "" {
+		return "$UserId:" + msg.UserID
+	}
+
+	if len(msg.Categories) > 0 {
+		var tags []string
+		for _, cat := range msg.Categories {
+			if cat != "" {
+				tags = append(tags, "$Category:"+cat)
+			}
+		}
+		if len(tags) > 0 {
+			return strings.Join(tags, " && ")
+		}
+	}
+
+	return ""
 }
 
 func (s *NotificationHubService) generateSasToken(uri string) (string, error) {
