@@ -49,14 +49,14 @@ func (s *UserPreferencesService) GetChatPreferences(ctx context.Context, userID 
 
 	merged := s.mergeChatPreferences(userPrefs, defaultPrefs)
 
-	var customPref *model.CustomPreference
+	var customPrefs []model.CustomPreference
 	if customPrefDesc != "" {
-		customPref = &model.CustomPreference{Description: customPrefDesc}
+		customPrefs = append(customPrefs, model.CustomPreference{Description: customPrefDesc})
 	}
 
 	return &model.ChatPreferences{
-		Preferences:      merged,
-		CustomPreference: customPref,
+		Preferences:       merged,
+		CustomPreferences: customPrefs,
 	}, nil
 }
 

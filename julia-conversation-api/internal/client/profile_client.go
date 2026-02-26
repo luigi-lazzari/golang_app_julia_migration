@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -15,9 +16,9 @@ type ProfileClient struct {
 func NewProfileClient(baseURL string, timeout time.Duration) *ProfileClient {
 	return &ProfileClient{
 		baseURL: baseURL,
-		httpClient: &http.Client{
+		httpClient: NewHeaderPropagationClient(&http.Client{
 			Timeout: timeout,
-		},
+		}),
 	}
 }
 
@@ -26,14 +27,12 @@ type UserPreferencesResponse struct {
 	Notifications []string            `json:"notifications"`
 }
 
-func (c *ProfileClient) GetUserPreferences(jwt string) (*UserPreferencesResponse, error) {
+func (c *ProfileClient) GetUserPreferences(ctx context.Context) (*UserPreferencesResponse, error) {
 	url := fmt.Sprintf("%s/api/v1/users/me/preferences", c.baseURL)
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
-
-	req.Header.Set("Authorization", "Bearer "+jwt)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

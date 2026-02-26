@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"log"
 
 	"julia-conversation-api/internal/api/models"
@@ -21,26 +22,26 @@ func NewConversationService(convClient *client.ConversationClient, saClient *cli
 	}
 }
 
-func (s *ConversationService) GetConversation(id string, page, size int, jwt string) (*models.ConversationPage, error) {
+func (s *ConversationService) GetConversation(ctx context.Context, id string, page, size int) (*models.ConversationPage, error) {
 	log.Printf("Retrieving conversation for id[%s]", id)
-	return s.convClient.GetConversation(id, size, (page-1)*size, jwt)
+	return s.convClient.GetConversation(ctx, id, size, (page-1)*size)
 }
 
-func (s *ConversationService) GetUserConversations(page, size int, jwt string) (*models.ConversationSummaryPage, error) {
+func (s *ConversationService) GetUserConversations(ctx context.Context, page, size int) (*models.ConversationSummaryPage, error) {
 	log.Printf("Retrieving user conversations")
-	return s.convClient.ListUserConversations(size, (page-1)*size, jwt)
+	return s.convClient.ListUserConversations(ctx, size, (page-1)*size)
 }
 
-func (s *ConversationService) AssociateUserConversation(id string, jwt string) error {
+func (s *ConversationService) AssociateUserConversation(ctx context.Context, id string) error {
 	log.Printf("Associating conversation for id[%s]", id)
-	return s.convClient.AssociateConversation(id, jwt)
+	return s.convClient.AssociateConversation(ctx, id)
 }
 
-func (s *ConversationService) GetSuggestions(id string, jwt string) ([]models.Suggestion, error) {
+func (s *ConversationService) GetSuggestions(ctx context.Context, id string) ([]models.Suggestion, error) {
 	log.Printf("Retrieving suggestions for id[%s]", id)
 
 	// Fetch preferences to improve suggestions
-	prefs, err := s.profileClient.GetUserPreferences(jwt)
+	prefs, err := s.profileClient.GetUserPreferences(ctx)
 	var preferences map[string][]string
 	if err == nil {
 		preferences = prefs.Chat
@@ -48,20 +49,19 @@ func (s *ConversationService) GetSuggestions(id string, jwt string) ([]models.Su
 		log.Printf("Warning: failed to fetch user preferences for suggestions: %v", err)
 	}
 
-	return s.convClient.GenerateSuggestions(id, jwt, preferences)
+	return s.convClient.GenerateSuggestions(ctx, id, preferences)
 }
 
-func (s *ConversationService) DeleteConversation(id string, jwt string) error {
+func (s *ConversationService) DeleteConversation(ctx context.Context, id string) error {
 	log.Printf("Deleting conversation for id[%s]", id)
-	// Java implementation was returning empty Mono, but let's assume it should call something if available
-	return nil
+	return s.convClient.DeleteConversation(ctx, id)
 }
 
-func (s *ConversationService) ConversationInteract(request models.ConversationRequest, jwt string) (*models.ConversationResponse, error) {
+func (s *ConversationService) ConversationInteract(ctx context.Context, request models.ConversationRequest) (*models.ConversationResponse, error) {
 	log.Printf("Handling conversation interaction for id[%s]", request.ConversationID)
 
 	// Fetch preferences to enrich the LLM context
-	prefs, err := s.profileClient.GetUserPreferences(jwt)
+	prefs, err := s.profileClient.GetUserPreferences(ctx)
 	var preferences map[string]interface{}
 	if err == nil {
 		preferences = make(map[string]interface{})
@@ -73,7 +73,7 @@ func (s *ConversationService) ConversationInteract(request models.ConversationRe
 		log.Printf("Warning: failed to fetch user preferences for interaction: %v", err)
 	}
 
-	resp, err := s.saClient.ConversationInteract(request, jwt, preferences)
+	resp, err := s.saClient.ConversationInteract(ctx, request, preferences)
 	if err != nil {
 		return nil, err
 	}

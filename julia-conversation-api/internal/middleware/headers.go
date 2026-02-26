@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"julia-conversation-api/internal/appcontext"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -21,6 +23,21 @@ func RequestHeaders() gin.HandlerFunc {
 		}
 		c.Header("X-Correlation-Id", correlationID)
 		c.Set("X-Correlation-Id", correlationID)
+
+		appPlatform := c.GetHeader("X-App-Platform")
+		appVersion := c.GetHeader("X-App-Version")
+
+		// Enrich request context with tracking headers
+		ctx := c.Request.Context()
+		ctx = appcontext.WithHeader(ctx, appcontext.RequestIDKey, requestID)
+		ctx = appcontext.WithHeader(ctx, appcontext.CorrelationIDKey, correlationID)
+		if appPlatform != "" {
+			ctx = appcontext.WithHeader(ctx, appcontext.AppPlatformKey, appPlatform)
+		}
+		if appVersion != "" {
+			ctx = appcontext.WithHeader(ctx, appcontext.AppVersionKey, appVersion)
+		}
+		c.Request = c.Request.WithContext(ctx)
 
 		c.Next()
 	}

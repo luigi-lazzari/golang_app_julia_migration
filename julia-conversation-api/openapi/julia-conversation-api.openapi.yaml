@@ -1,0 +1,742 @@
+openapi: 3.0.3
+info:
+  title: Conversation API
+  version: 1.0.0
+  description: >
+    API for managing conversation and conversional interaction.
+
+servers:
+  - url: https://api.example.com
+    description: Production
+  - url: https://api-staging.example.com
+    description: Staging
+
+tags:
+  - name: conversations
+    description: Conversations
+  - name: users
+    description: Users
+
+security:
+  - bearerAuth: []
+
+paths:
+
+  /api/v1/conversations:
+    post:
+      tags: 
+        - conversations
+      summary: Conversation interaction
+      description: >
+        Create or continue a conversation.
+      operationId: conversationInteraction
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/AppPlatform"
+        - $ref: "#/components/parameters/AppVersion"
+        - $ref: "#/components/parameters/RequestId"
+        - $ref: "#/components/parameters/CorrelationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConversationRequest"
+      responses:
+        "200":
+          description: Success
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/ConversationResponse'
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"  
+    
+  /api/v1/conversations/{conversationId}:
+    get:
+      tags: 
+        - conversations
+      summary: Retrieve a conversation
+      description: >
+        Retrieve a conversation.
+      operationId: getConversation
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ConversationId'
+        - $ref: "#/components/parameters/AppPlatform"
+        - $ref: "#/components/parameters/AppVersion"
+        - $ref: "#/components/parameters/RequestId"
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/PageNumber"
+        - $ref: "#/components/parameters/PageSize"        
+      responses:
+        "200":
+          description: Success
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/ConversationPage'
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError" 
+
+    delete:
+      tags: 
+        - conversations
+      summary: Delete a conversation
+      description: >
+        Unregisters a device installation.
+      operationId: deleteConversation
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ConversationId'
+        - $ref: "#/components/parameters/AppPlatform"
+        - $ref: "#/components/parameters/AppVersion"
+        - $ref: "#/components/parameters/RequestId"
+        - $ref: "#/components/parameters/CorrelationId"
+      responses:
+        "204":
+          description: No Content
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError" 
+
+  /api/v1/conversations/{conversationId}/suggestions:
+    get:
+      tags: 
+        - conversations
+      summary: Retrieve conversation suggestions
+      description: >
+        Retrieve conversation suggestions.
+      operationId: getConversationSuggestion
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ConversationId'
+        - $ref: "#/components/parameters/AppPlatform"
+        - $ref: "#/components/parameters/AppVersion"
+        - $ref: "#/components/parameters/RequestId"
+        - $ref: "#/components/parameters/CorrelationId"
+      responses:
+        "200":
+          description: Success
+          content: 
+            application/json: 
+              schema: 
+                type: array
+                items: 
+                  $ref: '#/components/schemas/Suggestion'
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError" 
+
+  /api/v1/users/me/conversations:
+    get:
+      tags: 
+        - users
+      summary: Retrieve user conversations
+      description: >
+         Retrieve user conversations.
+      operationId: getUserConversations
+      security:
+        - bearerAuth: [] 
+      parameters:
+        - $ref: "#/components/parameters/AppPlatform"
+        - $ref: "#/components/parameters/AppVersion"
+        - $ref: "#/components/parameters/RequestId"
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/PageNumber"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Success
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/ConversationSummaryPage'
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError" 
+
+  /api/v1/users/me/conversations/associate:
+    post:
+      tags: 
+        - users
+      summary: Associate user to conversation
+      description: >
+         Associate an anonymous conversation to user
+      operationId: associateUserConversation
+      security:
+        - bearerAuth: [] 
+      parameters:
+        - $ref: "#/components/parameters/AppPlatform"
+        - $ref: "#/components/parameters/AppVersion"
+        - $ref: "#/components/parameters/RequestId"
+        - $ref: "#/components/parameters/CorrelationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConversationAssociationRequest"
+      responses:
+        "200":
+          description: Success
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError" 
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    ConversationId:
+      name: conversationId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Conversation ID.
+    AppPlatform:
+      name: X-App-Platform
+      in: header
+      required: true
+      description: Piattaforma dell'app
+      schema:
+        $ref: '#/components/schemas/AppPlatform' 
+    AppVersion:
+      name: X-App-Version
+      in: header
+      required: true
+      description: Versione semantica dell'app
+      example: 3.12.0
+      schema:
+        type: string
+        pattern: '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:\+.+)?$'
+    RequestId:
+      name: X-Request-Id
+      in: header
+      required: true
+      description: L'identificativo di richiesta
+      schema:
+        type: string
+        format: uuid 
+    CorrelationId:
+      name: X-Correlation-Id
+      in: header
+      required: true
+      description: L'identificativo di correlazione
+      schema:
+        type: string
+        format: uuid 
+    PageNumber:
+      name: page
+      in: query
+      required: false
+      description: Page number
+      schema:
+        type: integer
+        default: 1 
+        minimum: 1
+    PageSize:
+      name: size
+      in: query
+      required: false
+      description: Page size
+      schema:
+        type: integer
+        default: 10 
+        minimum: 5  
+  
+  responses:
+    BadRequest:
+      content:
+        application/problem+json:
+          example:
+            type: about:blank
+            title: Bad Request
+            status: 400
+            detail: Bad Request
+            instance: /path/instance
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+      description: Bad Request
+    Unauthorized:
+      content:
+        application/problem+json:
+          example:
+            type: about:blank
+            title: Unauthorized
+            status: 401
+            detail: Unauthorized
+            instance: /path/instance
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+      description: Unauthorized
+    Forbidden:
+      content:
+        application/problem+json:
+          example:
+            type: about:blank
+            title: Forbidden
+            status: 403
+            detail: Forbidden
+            instance: /path/instance
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+      description: Forbidden
+    NotFound:
+      content:
+        application/problem+json:
+          example:
+            type: about:blank
+            title: Not Found
+            status: 404
+            detail: Not Found
+            instance: /path/instance
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+      description: Not Found
+    InternalServerError:
+      content:
+        application/problem+json:
+          example:
+            type: about:blank
+            title: Internal Server Error
+            status: 500
+            detail: Internal Server Error
+            instance: /path/instance
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+      description: Internal Server Error  
+
+  schemas:
+    AppPlatform:
+      type: string
+      enum: [IOS, ANDROID]
+      description: The App Platform  
+
+    ConversationSummaryPage:
+      type: object 
+      required:
+        - totalElements
+        - totalPages
+        - pageSize
+        - data
+      properties:
+        totalElements:
+          type: integer
+          description: Total elements
+          example: 56
+        totalPages:
+          type: integer
+          description: Total number of pages
+          example: 6
+        pageSize:
+          type: integer
+          description: Page size
+          example: 10
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConversationSummary'
+
+    ConversationSummary:
+      type: object
+      required: 
+        - title
+        - conversationId
+        - createdAt
+        - updatedAt
+      properties: 
+        conversationId:
+          type: string
+          format: uid
+          description: Conversation id       
+        title:
+          type: string
+          maxLength: 255
+          description: Conversation title 
+          example: "Lorem ipsum dolor sit amet"
+        createdAt:
+          type: string
+          format: date-time
+          description: Conversation creation date
+        updatedAt:
+          type: string
+          format: date-time
+          description: Conversation last update 
+
+    ConversationPage:
+      type: object
+      required: 
+        - totalElements
+        - totalPages
+        - pageSize
+        - data
+      properties: 
+        totalElements:
+          type: integer
+          description: Total elements
+          example: 56
+        totalPages:
+          type: integer
+          description: Total number of pages
+          example: 6
+        pageSize:
+          type: integer
+          description: Page size
+          example: 10
+        data: 
+          type: array
+          items:
+            $ref: "#/components/schemas/Message"
+
+    ConversationRequest:
+      type: object
+      required: 
+        - message
+      properties:
+        conversationId:
+          type: string
+          format: uuid
+          description: Conversation id 
+        message:
+          $ref: '#/components/schemas/MessageRawData'
+        location:
+          $ref: '#/components/schemas/GeoCoordinates'
+
+    ConversationResponse:
+      type: object
+      required:
+      - conversationId
+      - message
+      properties: 
+        conversationId:
+          type: string
+          format: uuid
+          description: Conversation id   
+        message:
+          $ref: '#/components/schemas/MessageStructuredData'    
+
+    ConversationAssociationRequest:
+      type: object
+      required: 
+        - conversationId
+      properties:
+        conversationId:
+          type: string
+          format: uuid
+          description: Conversation id 
+    
+    Suggestion:
+      type: object
+      required: 
+        - label
+        - action
+      properties:
+        label:
+          type: string
+          description: Suggestion label 
+          example: Come posso pagare una multa?
+        action:
+          type: string
+          description: Suggestion action 
+          example: recupera informazioni sulle modalità di pagamento di una multa
+
+    MessageRole:
+      type: string
+      enum: [AGENT, USER]
+      readOnly: true
+      description: Allowed roles in conversation items.
+
+    Message:
+      oneOf:
+        - $ref: "#/components/schemas/MessageRaw"
+        - $ref: "#/components/schemas/MessageStructured"
+      discriminator:
+        propertyName: type
+        mapping:
+          message: "#/components/schemas/MessageRaw"
+          structured: "#/components/schemas/MessageStructured"
+
+    MessageRaw:
+      type: object
+      required:
+        - type
+        - role
+        - data
+      properties:
+        type:
+          type: string
+          pattern: "^message$"
+          example: message
+          description: The message type
+        role:
+          $ref: '#/components/schemas/MessageRole'  
+        data:
+          $ref: '#/components/schemas/MessageRawData'  
+    
+    MessageRawData:
+      type: object
+      required:
+      - content
+      properties:
+        content:
+          type: string
+          description: The plain text message      
+    
+    MessageStructured:
+      type: object
+      required:
+        - type
+        - role
+        - data
+      properties:
+        type:
+          type: string
+          pattern: "^structured$"
+          example: structured
+          description: The message type
+        role:
+          $ref: '#/components/schemas/MessageRole'  
+        data:
+          $ref: '#/components/schemas/MessageStructuredData' 
+    
+    MessageStructuredData:
+      type: object
+      required:
+      - content
+      properties: 
+        content:
+          type: string
+          description: The plain text answer 
+        summary:  
+          type: string
+          description: The plain text answer summary
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Action'  
+        components:
+          type: array
+          items:
+            $ref: '#/components/schemas/Component'
+
+    Component:
+      oneOf:
+        - $ref: "#/components/schemas/ComponentPoi"
+        - $ref: "#/components/schemas/ComponentGeneric"
+      discriminator:
+        propertyName: type
+        mapping:
+          poi: "#/components/schemas/ComponentPoi"
+          generic: "#/components/schemas/ComponentGeneric"
+    
+    ComponentPoi:
+      type: object
+      required:
+        - type
+        - data
+      properties:
+        type:
+          type: string
+          pattern: "^poi$"
+          example: poi
+          description: The component type
+        data:
+          $ref: "#/components/schemas/ComponentPoiData"
+
+    ComponentPoiData:
+      type: object
+      required:
+        - category
+      properties:    
+        name:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        contacts:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContactItem"
+        maps:
+          type: array
+          items:
+            $ref: "#/components/schemas/MapItem"
+        addresses:
+          type: array
+          items:
+            $ref: "#/components/schemas/AddressItem"
+
+    ComponentGeneric:
+      type: object
+      required:
+        - type
+        - data
+      properties:
+        type:
+          type: string
+          pattern: "^generic$"
+          example: generic
+          description: The component type
+        data:
+          $ref: "#/components/schemas/ComponentGenericData"
+
+    ComponentGenericData:
+      type: object
+      properties:
+        name:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        contacts:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContactItem"
+        maps:
+          type: array
+          items:
+            $ref: "#/components/schemas/MapItem"
+
+    AddressItem:
+      type: object
+      required:
+        - addressLine
+        - position
+      properties:
+        addressLine:
+          type: string
+        position:
+          $ref: "#/components/schemas/GeoCoordinates"
+          
+    GeoCoordinates:
+      type: object
+      required:
+        - latitude
+        - longitude
+      properties:
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+
+    Action:
+      type: string
+      enum:
+        - APP_TAXY
+        - LOCATION
+        - AUTH
+    
+    MapItem:
+      type: object
+      required:
+        - type
+        - value
+      properties:
+        type:
+          type: string
+          enum:
+          - GOOGLE
+          - APPLE
+          - BING
+        value:
+          type: string
+          format: uri
+          description: URL to the map location.
+    
+    ContactItem:
+      type: object
+      required:
+        - type
+        - value
+      properties:
+        type:
+          type: string
+          enum:
+          - PHONE
+          - LINK
+          - EMAIL
+          - SOCIAL
+        value:
+          type: string
+
+    ProblemDetails:
+      type: object
+      description: Problem Details for HTTP APIs (RFC 7807)
+      additionalProperties: true        
+      required:
+        - type
+        - title
+        - status
+      properties:
+        type:
+          type: string
+          format: uri
+          description: URI che identifica il tipo di problema
+          example: "https://api.example.com/problems/invalid-request"
+        title:
+          type: string
+          description: Breve riassunto leggibile del problema
+          example: "Invalid request"
+        status:
+          type: integer
+          format: int32
+          description: HTTP status code
+          example: 400
+        detail:
+          type: string
+          description: Dettaglio leggibile del problema
+          nullable: true
+          example: "Missing required headers: X-App-Platform, X-App-Version"
+        instance:
+          type: string
+          format: uri-reference
+          description: URI che identifica l'istanza specifica del problema
+          nullable: true
+          example: "/api/v1/app-config"

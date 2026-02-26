@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"julia-conversation-api/internal/appcontext"
 	"julia-conversation-api/internal/config"
 
 	"github.com/gin-gonic/gin"
@@ -33,10 +34,16 @@ func Auth(cfg config.AuthConfig) gin.HandlerFunc {
 		tokenString := parts[1]
 		c.Set("jwt", tokenString)
 
+		// Enrich request context with JWT
+		ctx := c.Request.Context()
+		ctx = appcontext.WithAuthToken(ctx, tokenString)
+		c.Request = c.Request.WithContext(ctx)
+
 		if !cfg.ValidationEnabled {
 			c.Next()
 			return
 		}
+		// ... rest of the file ...
 
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {

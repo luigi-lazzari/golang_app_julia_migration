@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -18,20 +19,18 @@ type ConversationClient struct {
 func NewConversationClient(baseURL string, timeout time.Duration) *ConversationClient {
 	return &ConversationClient{
 		baseURL: baseURL,
-		httpClient: &http.Client{
+		httpClient: NewHeaderPropagationClient(&http.Client{
 			Timeout: timeout,
-		},
+		}),
 	}
 }
 
-func (c *ConversationClient) GetConversation(id string, limit, offset int, jwt string) (*models.ConversationPage, error) {
+func (c *ConversationClient) GetConversation(ctx context.Context, id string, limit, offset int) (*models.ConversationPage, error) {
 	url := fmt.Sprintf("%s/v1/conversations/%s?limit=%d&offset=%d", c.baseURL, id, limit, offset)
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
-
-	req.Header.Set("Authorization", "Bearer "+jwt)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -51,14 +50,12 @@ func (c *ConversationClient) GetConversation(id string, limit, offset int, jwt s
 	return &page, nil
 }
 
-func (c *ConversationClient) ListUserConversations(limit, offset int, jwt string) (*models.ConversationSummaryPage, error) {
+func (c *ConversationClient) ListUserConversations(ctx context.Context, limit, offset int) (*models.ConversationSummaryPage, error) {
 	url := fmt.Sprintf("%s/v1/conversations/user?limit=%d&offset=%d", c.baseURL, limit, offset)
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
-
-	req.Header.Set("Authorization", "Bearer "+jwt)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -78,14 +75,12 @@ func (c *ConversationClient) ListUserConversations(limit, offset int, jwt string
 	return &page, nil
 }
 
-func (c *ConversationClient) AssociateConversation(id string, jwt string) error {
+func (c *ConversationClient) AssociateConversation(ctx context.Context, id string) error {
 	url := fmt.Sprintf("%s/v1/conversations/%s/associate", c.baseURL, id)
-	req, err := http.NewRequest("POST", url, nil)
+	req, err := http.NewRequestWithContext(ctx, "POST", url, nil)
 	if err != nil {
 		return err
 	}
-
-	req.Header.Set("Authorization", "Bearer "+jwt)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -100,7 +95,7 @@ func (c *ConversationClient) AssociateConversation(id string, jwt string) error 
 	return nil
 }
 
-func (c *ConversationClient) GenerateSuggestions(id string, jwt string, preferences map[string][]string) ([]models.Suggestion, error) {
+func (c *ConversationClient) GenerateSuggestions(ctx context.Context, id string, preferences map[string][]string) ([]models.Suggestion, error) {
 	url := fmt.Sprintf("%s/v1/conversations/%s/suggestions", c.baseURL, id)
 
 	payload := struct {
@@ -112,13 +107,12 @@ func (c *ConversationClient) GenerateSuggestions(id string, jwt string, preferen
 	}
 
 	body, _ := json.Marshal(payload)
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
+	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+jwt)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -136,4 +130,24 @@ func (c *ConversationClient) GenerateSuggestions(id string, jwt string, preferen
 	}
 
 	return suggestions, nil
+}
+
+func (c *ConversationClient) DeleteConversation(ctx context.Context, id string) error {
+	url := fmt.Sprintf("%s/v1/conversations/%s", c.baseURL, id)
+	req, err := http.NewRequestWithContext(ctx, "DELETE", url, nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	return nil
 }

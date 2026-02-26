@@ -1,0 +1,766 @@
+openapi: 3.0.3
+info:
+  title: Mobile BFF API
+  description: Backend-for-Frontend per app mobile
+  version: 1.0.0
+
+servers:
+  - url: https://api.example.com
+    description: Production
+  - url: https://api-staging.example.com
+    description: Staging
+
+tags:
+  - name: UserProfile
+    description: Gestione profilo e preferenze utente
+  - name: Notifications
+    description: Gestione notifiche push e preferenze di notifica
+
+paths:
+  /api/v1/users/me/notifications/installations/{installationId}:
+    put:
+      tags: 
+        - Notifications
+      summary: Registra o aggiorna l'installazione del dispositivo corrente
+      description: >
+        Endpoint per registrare o aggiornare l'installazione del dispositivo dell'utente autenticato per ricevere notifiche push.
+        L'installationId identifica univocamente il dispositivo.
+      operationId: upsertInstallation
+      parameters:
+        - name: installationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Identificatore stabile dell'installazione generato dall'app mobile
+        - $ref: "#/components/parameters/AppPlatform"
+        - $ref: "#/components/parameters/AppVersion"
+        - $ref: "#/components/parameters/RequestId"
+        - $ref: "#/components/parameters/CorrelationId"
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeviceInstallationRequest"
+            example:
+              platform: FCM
+              pushChannel: "dKz8x9Y2Q3e4R5t6Y7u8I9o0P1a2S3d4F5g6H7j8K9l0"
+              language: "it-IT"
+      responses:
+        "201":
+          description: Installazione registrata o aggiornata con successo
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    
+    delete:
+      tags: 
+        - Notifications
+      summary: Elimina l'installazione del dispositivo corrente
+      description: >
+        Endpoint per rimuovere la registrazione del dispositivo dell'utente autenticato e interrompere la ricezione di notifiche push.
+        Dopo questa operazione il dispositivo non riceverà più notifiche.
+      operationId: deleteInstallation
+      parameters:
+        - name: installationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Identificatore stabile dell'installazione generato dall'app mobile
+        - $ref: "#/components/parameters/AppPlatform"
+        - $ref: "#/components/parameters/AppVersion"
+        - $ref: "#/components/parameters/RequestId"
+        - $ref: "#/components/parameters/CorrelationId"
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Installazione eliminata con successo
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/users/me/preferences/chat:
+    get:
+      tags:
+        - UserProfile
+      summary: Recupera le preferenze dell'utente
+      description: >
+        Endpoint per recuperare le preferenze dell'utente autenticato dal profilo salvato.
+        Include preferenze di tema, lingua, notifiche e interessi personali.
+      operationId: getUserPreferences
+      parameters:
+        - $ref: "#/components/parameters/AppPlatform"
+        - $ref: "#/components/parameters/AppVersion"
+        - $ref: "#/components/parameters/RequestId"
+        - $ref: "#/components/parameters/CorrelationId"
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatPreferences"
+              example:
+                preferences:
+                  - id: documents
+                    category: SERVICES
+                    enabled: true
+                    description: Documenti e anagrafe
+                  - id: school
+                    category: SERVICES
+                    enabled: true
+                    description: Scuola
+                  - id: taxes
+                    category: SERVICES
+                    enabled: false
+                    description: Tributi
+                  - id: housing
+                    category: SERVICES
+                    enabled: true
+                    description: Casa
+                  - id: work
+                    category: SERVICES
+                    enabled: false
+                    description: Lavoro
+                  - id: environment
+                    category: SERVICES
+                    enabled: false
+                    description: Ambiente
+                  - id: business
+                    category: SERVICES
+                    enabled: false
+                    description: Attività commerciale
+                  - id: art_culture
+                    category: LEISURE
+                    enabled: true
+                    description: Arte e cultura
+                  - id: music_shows
+                    category: LEISURE
+                    enabled: true
+                    description: Musica e spettacoli
+                  - id: food_dining
+                    category: LEISURE
+                    enabled: false
+                    description: Cibo e locali
+                  - id: sports_nature
+                    category: LEISURE
+                    enabled: true
+                    description: Sport e natura
+                  - id: cinema
+                    category: LEISURE
+                    enabled: false
+                    description: Cinema e intrattenimento
+                  - id: family
+                    category: LEISURE
+                    enabled: true
+                    description: Attività per famiglie
+                  - id: libraries
+                    category: LEISURE
+                    enabled: false
+                    description: Biblioteche e studio
+                  - id: transit
+                    category: TRANSPORT
+                    enabled: true
+                    description: Mezzi pubblici
+                  - id: car
+                    category: TRANSPORT
+                    enabled: true
+                    description: Auto
+                  - id: bike
+                    category: TRANSPORT
+                    enabled: false
+                    description: Bici / monopattino / sharing
+                  - id: walking
+                    category: TRANSPORT
+                    enabled: true
+                    description: A piedi
+                  - id: motorcycle
+                    category: TRANSPORT
+                    enabled: false
+                    description: Moto / scooter
+                customPreferences:
+                  - description: Sono celiaco
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    put:
+      tags:
+        - UserProfile
+      summary: Aggiorna le preferenze dell'utente
+      description: >
+        Endpoint per aggiornare le preferenze dell'utente autenticato.
+        Permette l'aggiornamento parziale o completo delle preferenze e notifiche.
+        
+        **Validazioni:**
+        - Tutti gli ID delle preferenze devono essere univoci
+        - Le preferenze con enabled=true vengono salvate, quelle con enabled=false vengono rimosse
+      operationId: updateUserPreferences
+      parameters:
+        - $ref: "#/components/parameters/AppPlatform"
+        - $ref: "#/components/parameters/AppVersion"
+        - $ref: "#/components/parameters/RequestId"
+        - $ref: "#/components/parameters/CorrelationId"
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatPreferences"
+            examples:
+              validRequest:
+                summary: Richiesta valida
+                value:
+                  preferences:
+                    - id: documents
+                      category: SERVICES
+                      enabled: true
+                      description: Documenti e anagrafe
+                    - id: school
+                      category: SERVICES
+                      enabled: true
+                      description: Scuola
+                    - id: taxes
+                      category: SERVICES
+                      enabled: false
+                      description: Tributi
+                    - id: housing
+                      category: SERVICES
+                      enabled: true
+                      description: Casa
+                    - id: work
+                      category: SERVICES
+                      enabled: false
+                      description: Lavoro
+                    - id: environment
+                      category: SERVICES
+                      enabled: false
+                      description: Ambiente
+                    - id: business
+                      category: SERVICES
+                      enabled: false
+                      description: Attività commerciale
+                    - id: art_culture
+                      category: LEISURE
+                      enabled: true
+                      description: Arte e cultura
+                    - id: music_shows
+                      category: LEISURE
+                      enabled: true
+                      description: Musica e spettacoli
+                    - id: food_dining
+                      category: LEISURE
+                      enabled: false
+                      description: Cibo e locali
+                    - id: sports_nature
+                      category: LEISURE
+                      enabled: true
+                      description: Sport e natura
+                    - id: cinema
+                      category: LEISURE
+                      enabled: false
+                      description: Cinema e intrattenimento
+                    - id: family
+                      category: LEISURE
+                      enabled: true
+                      description: Attività per famiglie
+                    - id: libraries
+                      category: LEISURE
+                      enabled: false
+                      description: Biblioteche e studio
+                    - id: transit
+                      category: TRANSPORT
+                      enabled: true
+                      description: Mezzi pubblici
+                    - id: car
+                      category: TRANSPORT
+                      enabled: true
+                      description: Auto
+                    - id: bike
+                      category: TRANSPORT
+                      enabled: false
+                      description: Bici / monopattino / sharing
+                    - id: walking
+                      category: TRANSPORT
+                      enabled: true
+                      description: A piedi
+                    - id: motorcycle
+                      category: TRANSPORT
+                      enabled: false
+                      description: Moto / scooter
+                  customPreferences:
+                    - description: Accessibilità carrozzina
+      responses:
+        "200":
+          description: Preferenze aggiornate con successo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatPreferences"
+        "400":
+          description: >
+            Richiesta non valida. Possibili cause:
+            - ID duplicati nelle preferenze (ogni ID deve essere univoco)
+            - Formato dei dati non valido
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+              examples:
+                duplicateIds:
+                  summary: ID duplicati
+                  value:
+                    type: "about:blank"
+                    title: "Bad Request"
+                    status: 400
+                    detail: "Duplicate preference IDs in update request. Each preference ID must be unique."
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/users/me/preferences/language:
+    get:
+      tags:
+        - UserProfile
+      summary: Ottiene la lingua preferita dell'utente
+      description: >
+        Endpoint per ottenere la lingua preferita dell'utente autenticato.
+        Se non è stata impostata alcuna lingua preferita, restituisce null.
+      operationId: getPreferredLanguage
+      parameters:
+        - $ref: "#/components/parameters/AppPlatform"
+        - $ref: "#/components/parameters/AppVersion"
+        - $ref: "#/components/parameters/RequestId"
+        - $ref: "#/components/parameters/CorrelationId"
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Success 
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LanguagePreference"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    put:
+      tags:
+        - UserProfile
+      summary: Aggiorna la lingua preferita dell'utente
+      description: >
+        Endpoint per aggiornare la lingua preferita dell'utente autenticato.
+        La lingua deve essere specificata come codice BCP 47 (es: it-IT, en-US, fr-FR).
+      operationId: setPreferredLanguage
+      parameters:
+        - $ref: "#/components/parameters/AppPlatform"
+        - $ref: "#/components/parameters/AppVersion"
+        - $ref: "#/components/parameters/RequestId"
+        - $ref: "#/components/parameters/CorrelationId"
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LanguagePreference"
+      responses:
+        "200":
+          description: Lingua preferita aggiornata con successo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LanguagePreference"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/users/me/notifications/preferences:
+    get:
+      tags:
+        - Notifications
+      summary: Ottiene le preferenze di notifica dell'utente
+      description: >
+        Endpoint per ottenere le preferenze di notifica dell'utente autenticato.
+        Ogni preferenza indica se l'utente desidera ricevere notifiche per quella categoria.
+      operationId: getNotificationPreferences
+      parameters:
+        - $ref: "#/components/parameters/AppPlatform"
+        - $ref: "#/components/parameters/AppVersion"
+        - $ref: "#/components/parameters/RequestId"
+        - $ref: "#/components/parameters/CorrelationId"
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationPreferences"
+              example:
+                notifications:
+                  - id: push_municipality
+                    enabled: true
+                  - id: push_mobility
+                    enabled: true
+                  - id: push_news
+                    enabled: true
+                  - id: push_appio
+                    enabled: false
+                language: "it-IT"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    put:
+      tags:
+        - Notifications
+      summary: Aggiorna le preferenze di notifica dell'utente
+      description: >
+        Endpoint per aggiornare le preferenze di notifica dell'utente autenticato.
+        Permette di abilitare o disabilitare singole categorie di notifiche.
+      operationId: updateNotificationPreferences
+      parameters:
+        - $ref: "#/components/parameters/AppPlatform"
+        - $ref: "#/components/parameters/AppVersion"
+        - $ref: "#/components/parameters/RequestId"
+        - $ref: "#/components/parameters/CorrelationId"
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationPreferences"
+            example:
+              notifications:
+                - id: push_municipality
+                  enabled: true
+                - id: push_mobility
+                  enabled: false
+              language: "it-IT"
+      responses:
+        "200":
+          description: Preferenze di notifica aggiornate con successo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationPreferences"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    AppPlatform:
+      name: X-App-Platform
+      in: header
+      required: true
+      description: Piattaforma dell'app
+      schema:
+        $ref: '#/components/schemas/AppPlatform' 
+    AppVersion:
+      name: X-App-Version
+      in: header
+      required: true
+      description: Versione semantica dell'app
+      example: 3.12.0
+      schema:
+        type: string
+        pattern: '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:\+.+)?$'
+    RequestId:
+      name: X-Request-Id
+      in: header
+      required: true
+      description: L'identificativo di richiesta
+      schema:
+        type: string
+        format: uuid 
+    CorrelationId:
+      name: X-Correlation-Id
+      in: header
+      required: true
+      description: L'identificativo di correlazione
+      schema:
+        type: string
+        format: uuid      
+
+  responses:
+    BadRequest:
+      content:
+        application/problem+json:
+          example:
+            type: about:blank
+            title: Bad Request
+            status: 400
+            detail: Bad Request
+            instance: /path/instance
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+      description: Bad Request
+    Unauthorized:
+      content:
+        application/problem+json:
+          example:
+            type: about:blank
+            title: Unauthorized
+            status: 401
+            detail: Unauthorized
+            instance: /path/instance
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+      description: Unauthorized
+    Forbidden:
+      content:
+        application/problem+json:
+          example:
+            type: about:blank
+            title: Forbidden
+            status: 403
+            detail: Forbidden
+            instance: /path/instance
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+      description: Forbidden
+    NotFound:
+      content:
+        application/problem+json:
+          example:
+            type: about:blank
+            title: Not Found
+            status: 404
+            detail: Not Found
+            instance: /path/instance
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+      description: Not Found
+    InternalServerError:
+      content:
+        application/problem+json:
+          example:
+            type: about:blank
+            title: Internal Server Error
+            status: 500
+            detail: Internal Server Error
+            instance: /path/instance
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+      description: Internal Server Error  
+  
+  schemas:
+    AppPlatform:
+      type: string
+      description: Piattaforma dell'app
+      enum:
+        - IOS
+        - ANDROID
+      example: ANDROID
+
+    InstallationPlatform:
+      type: string
+      description: Piattaforma del servizio di notifiche push
+      enum:
+        - FCM
+        - APNS
+      example: FCM
+
+    DeviceInstallationRequest:
+      type: object
+      description: Richiesta di registrazione o aggiornamento installazione dispositivo
+      additionalProperties: false
+      required: 
+        - platform
+        - pushChannel
+        - language
+      properties:
+        platform:
+          $ref: "#/components/schemas/InstallationPlatform"
+        pushChannel:
+          type: string
+          description: Token FCM o APNS per le notifiche push
+          example: "dKz8x9Y2Q3e4R5t6Y7u8I9o0P1a2S3d4F5g6H7j8K9l0"
+        language:
+          type: string
+          description: Codice lingua in formato BCP 47 (es. it-IT, en-US)
+          pattern: '^[a-z]{2}-[A-Z]{2}$'
+          example: "it-IT"
+
+    ChatPreferences:
+      type: object
+      description: Preferenze chat dell'utente (usato sia per richiesta che risposta)
+      required:
+        - preferences
+      properties:
+        preferences:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserPreferences"
+        customPreferences:
+          type: array
+          nullable: true
+          description: Lista di preferenze personalizzate dell'utente (massimo 5)
+          maxItems: 5
+          items:
+            type: object
+            required:
+              - description
+            properties:
+              description:
+                type: string
+                description: Descrizione della preferenza personalizzata
+                example: "La mia preferenza"
+
+    UserPreferences:
+      type: object
+      description: Preferenze di configurazione utente
+      required:
+        - id
+        - enabled
+      properties:
+        id:
+          type: string
+          description: |
+            Identificativo univoco dell'interesse. ID possibili:
+            - SERVICES: documents, school, taxes, housing, work, environment, business
+            - LEISURE: art_culture, music_shows, food_dining, sports_nature, cinema, family, libraries
+            - TRANSPORT: transit, car, bike, walking, motorcycle
+          example: "documents"
+        category:
+          type: string
+          description: Categoria dell'interesse (SERVICES, LEISURE, TRANSPORT)
+          enum: [SERVICES, LEISURE, TRANSPORT]
+          example: "SERVICES"
+        enabled:
+          type: boolean
+          description: Indica se l'interesse è attivo per l'utente
+          example: true
+        description:
+          type: string
+          description: Descrizione opzionale della preferenza
+          example: "Preferenza per i documenti digitali"
+          nullable: true
+
+    LanguagePreference:
+      type: object
+      description: Preferenza lingua dell'utente (usato sia per richiesta che risposta)
+      properties:
+        language:
+          type: string
+          nullable: true
+          description: Codice lingua in formato BCP 47 (es. it-IT, en-US). Null se non impostata. Richiesto in PUT, opzionale in GET.
+          pattern: '^[a-z]{2}-[A-Z]{2}$'
+          example: "it-IT"
+
+    NotificationPreferences:
+      type: object
+      description: Preferenze di notifica dell'utente (usato sia per richiesta che risposta)
+      required:
+        - notifications
+      properties:
+        notifications:
+          type: array
+          description: Lista delle preferenze di notifica
+          items:
+            type: object
+            required:
+              - id
+              - enabled
+            properties:
+              id:
+                type: string
+                description: |
+                  Identificativo univoco della categoria di notifica. ID possibili:
+                  - push_municipality: Portale di Roma Capitale (Comunicazioni istituzionali, avvisi, servizi al cittadino)
+                  - push_mobility: Roma Servizi per la Mobilità (Viabilità, ZTL, cantieri, chiusure stradali)
+                  - push_news: News Roma (Notizie generali e di contesto al cittadino)
+                  - push_appio: Servizi di Cittadino APP IO (Notifiche provenienti a ambito App IO)
+                example: "push_news"
+              enabled:
+                type: boolean
+                description: Indica se le notifiche per questa categoria sono abilitate
+                example: true
+        language:
+          type: string
+          description: Codice lingua in formato BCP 47 (es. it-IT, en-US)
+          pattern: '^[a-z]{2}-[A-Z]{2}$'
+          example: "it-IT"
+
+    ProblemDetails:
+      type: object
+      description: Problem Details for HTTP APIs (RFC 7807)
+      additionalProperties: true        
+      required:
+        - type
+        - title
+        - status
+      properties:
+        type:
+          type: string
+          format: uri
+          description: URI che identifica il tipo di problema
+          example: "https://api.example.com/problems/invalid-request"
+        title:
+          type: string
+          description: Breve riassunto leggibile del problema
+          example: "Invalid request"
+        status:
+          type: integer
+          format: int32
+          description: HTTP status code
+          example: 400
+        detail:
+          type: string
+          description: Dettaglio leggibile del problema
+          nullable: true
+          example: "Missing required headers: X-App-Platform, X-App-Version"
+        instance:
+          type: string
+          format: uri-reference
+          description: URI che identifica l'istanza specifica del problema
+          nullable: true
+          example: "/api/v1/user/preferences"

@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -18,9 +19,9 @@ type SuperAgentClient struct {
 func NewSuperAgentClient(baseURL string, timeout time.Duration) *SuperAgentClient {
 	return &SuperAgentClient{
 		baseURL: baseURL,
-		httpClient: &http.Client{
+		httpClient: NewHeaderPropagationClient(&http.Client{
 			Timeout: timeout,
-		},
+		}),
 	}
 }
 
@@ -48,7 +49,7 @@ type ChatResponse struct {
 	Message   models.MessageStructuredData `json:"message"`
 }
 
-func (c *SuperAgentClient) ConversationInteract(request models.ConversationRequest, jwt string, preferences map[string]interface{}) (*ChatResponse, error) {
+func (c *SuperAgentClient) ConversationInteract(ctx context.Context, request models.ConversationRequest, preferences map[string]interface{}) (*ChatResponse, error) {
 	url := fmt.Sprintf("%s/chat", c.baseURL)
 
 	parts := []RequestMessagePart{
@@ -81,20 +82,18 @@ func (c *SuperAgentClient) ConversationInteract(request models.ConversationReque
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
+	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	if jwt != "" {
-		req.Header.Set("X-User-Token", jwt)
-	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
+	// ... rest of the file ...
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {

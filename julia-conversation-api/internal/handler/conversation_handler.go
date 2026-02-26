@@ -24,9 +24,7 @@ func (h *ConversationHandler) GetConversation(c *gin.Context) {
 	id := c.Param("conversationId")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	size, _ := strconv.Atoi(c.DefaultQuery("size", "10"))
-	jwt := c.GetString("jwt")
-
-	result, err := h.service.GetConversation(id, page, size, jwt)
+	result, err := h.service.GetConversation(c.Request.Context(), id, page, size)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -38,9 +36,7 @@ func (h *ConversationHandler) GetConversation(c *gin.Context) {
 func (h *ConversationHandler) GetUserConversations(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	size, _ := strconv.Atoi(c.DefaultQuery("size", "10"))
-	jwt := c.GetString("jwt")
-
-	result, err := h.service.GetUserConversations(page, size, jwt)
+	result, err := h.service.GetUserConversations(c.Request.Context(), page, size)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -56,8 +52,7 @@ func (h *ConversationHandler) AssociateUserConversation(c *gin.Context) {
 		return
 	}
 
-	jwt := c.GetString("jwt")
-	if err := h.service.AssociateUserConversation(req.ConversationID, jwt); err != nil {
+	if err := h.service.AssociateUserConversation(c.Request.Context(), req.ConversationID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -67,9 +62,7 @@ func (h *ConversationHandler) AssociateUserConversation(c *gin.Context) {
 
 func (h *ConversationHandler) GetSuggestions(c *gin.Context) {
 	id := c.Param("conversationId")
-	jwt := c.GetString("jwt")
-
-	result, err := h.service.GetSuggestions(id, jwt)
+	result, err := h.service.GetSuggestions(c.Request.Context(), id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -80,9 +73,7 @@ func (h *ConversationHandler) GetSuggestions(c *gin.Context) {
 
 func (h *ConversationHandler) DeleteConversation(c *gin.Context) {
 	id := c.Param("conversationId")
-	jwt := c.GetString("jwt")
-
-	if err := h.service.DeleteConversation(id, jwt); err != nil {
+	if err := h.service.DeleteConversation(c.Request.Context(), id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -97,8 +88,7 @@ func (h *ConversationHandler) ConversationInteract(c *gin.Context) {
 		return
 	}
 
-	jwt := c.GetString("jwt")
-	result, err := h.service.ConversationInteract(req, jwt)
+	result, err := h.service.ConversationInteract(c.Request.Context(), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
